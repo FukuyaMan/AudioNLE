@@ -2,11 +2,11 @@
 
 ## Recommendation
 
-**Inconclusive overall; Phase 1 — Build bootstrap: Pass; Phase A — Framework boundary and reconstruction: Pass; Phase B — Integer Timeline Sample: Pass; Phase C — Basic Signal Flow: Pass.**
+**Inconclusive overall; Phase 1 — Build bootstrap: Pass; Phase A — Framework boundary and reconstruction: Pass; Phase B — Integer Timeline Sample: Pass; Phase C — Basic Signal Flow: Pass; Phase D — Processing Stack order: Pass.**
 
-The original Phase 1 environment block has been resolved. The pinned Tracktion/JUCE sources configure, build, and launch in a prototype-only headless executable on this Windows environment. Phase A established the bounded framework boundary and reconstruction path without making Tracktion runtime state authoritative. Phase B demonstrated zero-error integer-sample observation. Phase C then demonstrated the stated basic signal-flow and Track Mix fixtures in a headless float-buffer observation point. The overall feasibility conclusion remains Inconclusive because this task is explicitly limited to Phase C; Phases D–I have not been run. No ADR is created.
+The original Phase 1 environment block has been resolved. The pinned Tracktion/JUCE sources configure, build, and launch in a prototype-only headless executable on this Windows environment. Phase A established the bounded framework boundary and reconstruction path without making Tracktion runtime state authoritative. Phase B demonstrated zero-error integer-sample observation. Phase C demonstrated the stated basic signal-flow and Track Mix fixtures in a headless float-buffer observation point. Phase D then mapped framework-free deterministic Processor descriptions, in order, to Clip, Track, and Master runtime Stacks; it observed the expected non-commutative results and a stopped-state full rebuild for reorder. The overall feasibility conclusion remains Inconclusive because this task is explicitly limited to Phase D; Phases E–I have not been run. No ADR is created.
 
-The execution plan requires each phase to pass before the next begins. This result does not infer any Phase D–I behaviour from the bootstrap or Phases A–C targets.
+The execution plan requires each phase to pass before the next begins. This result does not infer any Phase E–I behaviour from the bootstrap or Phases A–D targets.
 
 ## 1. Environment
 
@@ -84,6 +84,22 @@ The raw fixtures, float-buffer observations, and command result are in [phase-c.
 | Processing Stacks | Pass for container/path presence with permitted empty stacks; non-empty processor mapping/order is deferred to Phase D. |
 | Domain boundary | Pass — renderer observations remain test evidence and do not synchronize into Domain State. |
 
+## 1.5 Phase D Processing Stack order result
+
+The raw fixtures, runtime Stack observations, and command result are in [phase-d.md](../../../benchmark-results/tracktion-feasibility/phase-d.md).
+
+| Criterion | Result |
+| --- | --- |
+| Framework-free Processor description | Pass — Domain processor ID, kind, parameter, and enabled state contain no Tracktion/JUCE type or runtime state. |
+| Clip order and parameter mapping | Pass — Add `0.25` → Multiply `2.0` observes `1.0`; runtime order, IDs, and parameters match Domain. |
+| Stopped-state reorder | Pass — Domain Multiply → Add reconstructs a new runtime and observes `0.75`; no reverse synchronization is used. |
+| Track Processing Stack | Pass — after two-Clip Track Mix `0.5`, Add → Multiply observes `1.5`. |
+| Master Processing Stack | Pass — Add → Multiply observes `1.0`. |
+| Layer distinction | Pass — Clip Add → Track Multiply → Master Add observes `1.25`; each layer's runtime Stack is independently observed. |
+| Destroy / reconstruct | Pass — re-creating the original Clip fixture retains order, parameters, and `1.0` output. |
+| Runtime authority | Pass — runtime is discarded/rebuilt from unchanged Domain state; it never writes Domain state. |
+| Update strategy | Pass for stopped scope — full runtime rebuild. Paused/playing update is intentionally unmeasured until Phase G. |
+
 ## 2. Dependency revisions and licence/NOTICE record
 
 | Component | Exact revision | Status |
@@ -101,10 +117,10 @@ The source notices at the pinned revisions were inspected and their bundled-depe
 | T-001 reconstruction | A | Pass | Framework-free fixture constructs, destroys, and reconstructs with equal observation; see `phase-a.md`. |
 | T-002 integer sample round-trip | B | Pass | Three fixtures, 32 Clip observations, and 30 reconstructions report maximum error 0 samples; see `phase-b.md`. |
 | T-003 overlap / Track Mix | C | Pass | Six headless fixtures observe basic signal flow, Track Mix, gain/pan, and internal 1.5 float sum; see `phase-c.md`. |
-| T-004 Processing Stack order | D | Inconclusive | Not started: Phase C passed; this task stops before Phase D. |
+| T-004 Processing Stack order | D | Pass | Deterministic Add/Multiply runtime Stack mapping observes Clip `1.0`/`0.75` reorder, Track `1.5`, Master `1.0`, and layered `1.25`; see `phase-d.md`. |
 | T-005 PDC | E | Inconclusive | No deterministic latency processor or VST3 plugin was implemented. |
 | T-006 Effect Tail | F | Inconclusive | No deterministic Tail processor was implemented. |
-| T-007 runtime editing | G | Inconclusive | Not started: outside this Phase B-only task. |
+| T-007 runtime editing | G | Inconclusive | Phase D verifies only stopped-state full rebuild for Stack reorder; paused/playing updates remain Phase G work. |
 | T-008 long source | H | Inconclusive | Not started: outside this Phase B-only task. |
 | T-009 dense edit | H | Inconclusive | Not started: outside this Phase B-only task. |
 | T-010 headless / failure injection | I | Inconclusive | Bootstrap executable exists, but Phase I automation and failure injection are outside this task. |
@@ -118,7 +134,7 @@ Only the bounded Phase A runtime-construction/reconstruction measurements exist.
 | Runtime construction | Phase A Pass — Domain fixture constructed one runtime, then after destruction reconstructed to an equal observation. |
 | Integer sample mapping | Phase B Pass — 32 observations across 48 kHz, long Timeline, and 44.1/48 kHz fixtures; maximum observed error = 0 samples. |
 | Overlap / Track Mix | Phase C Pass — 2- and 3-Clip overlap sum correctly; 1.5 internal float sum is not hard-clipped. |
-| Processing Stack order | Not executed — empty-stack path only; non-empty processor mapping/order is deferred to Phase D. |
+| Processing Stack order | Phase D Pass — deterministic Add/Multiply maps in Domain order to Clip/Track/Master Stacks: Clip Add→Multiply `1.0`, reordered Multiply→Add `0.75`, Track `1.5`, Master `1.0`, and three-layer path `1.25`. |
 | PDC | Not executed — no deterministic latency processor; `alignment error = 0 timeline samples` was **not** established. |
 | Effect Tail | Not executed — Source End, first Tail sample, last non-zero Tail sample, Processing End, and offline render end are unmeasured. |
 | Tail Move | Not executed — the required `+48000` sample movement case is unmeasured. |
@@ -136,20 +152,21 @@ Only the bounded Phase A runtime-construction/reconstruction measurements exist.
 | H2 Runtime Reconstruction | Pass (Phase A scope) | Same domain fixture produces an equal runtime observation after destroy/reconstruct. |
 | H3 Integer Timeline Sample | Pass (Phase B scope) | Integer Domain state remains authoritative through 30 reconstructions; all requested Timeline and Source fields observe at 0 sample difference. |
 | H5 Basic Signal Flow | Pass (Phase C scope) | Headless float render verifies stated Source/Clip/Track/Master path, overlap summation, gain/pan mapping, and no immediate hard clipping. |
+| H8 Runtime Editing | Pass (Phase D stopped scope only) | Domain-first stopped-state Stack reorder is represented by full runtime reconstruction; paused/playing updates remain unmeasured. |
 | H6 PDC | Inconclusive | No deterministic test processor/runtime exists. |
 | H7 Effect Tail | Inconclusive | No deterministic test processor/runtime exists. |
 
-No hard stop was reached. Phases A/B/C passed H1/H2/H3/H5 but do not evaluate H6 or H7.
+No hard stop was reached. Phases A/B/C/D passed their bounded criteria; H6 and H7 remain unmeasured.
 
 ## 6. Domain-boundary and scope review
 
-No production source exists or was changed. Phase A code is under `prototype/tracktion-feasibility/` only. No Tracktion, JUCE, or VST3 type, runtime identity, runtime serialization, pointer, or binary artifact was introduced into an AudioNLE Domain model.
+No production source exists or was changed. The Phase A–D code is under `prototype/tracktion-feasibility/` only. No Tracktion, JUCE, or VST3 type, runtime identity, runtime serialization, pointer, or binary artifact was introduced into an AudioNLE Domain model.
 
-No Project persistence, GUI, media import, synchronization-group/member behaviour, Clip Group behaviour, or Ripple semantics was delegated to Tracktion or implemented. The prototype's `Domain → Adapter → Runtime` direction was exercised for the Phase A, B, and C fixtures. The adapter-owned source resolver is an input mapping table only; it is not Project persistence or authoritative state. Runtime seconds and float render buffers are observations only and are never synchronized back to Domain State.
+No Project persistence, GUI, media import, synchronization-group/member behaviour, Clip Group behaviour, or Ripple semantics was delegated to Tracktion or implemented. The prototype's `Domain → Adapter → Runtime` direction was exercised for the Phase A–D fixtures. The adapter-owned source resolver is an input mapping table only; it is not Project persistence or authoritative state. The Phase D custom processor factory and temporary runtime state trees are adapter/runtime construction details. Runtime seconds and float render buffers are observations only and are never synchronized back to Domain State.
 
 ## 7. Required next limited action
 
-Phase C is complete. The next execution-plan step is Phase D — Processing Stack order, using the existing prototype-only boundary and recorded SHAs. It was intentionally not implemented or executed in this task. This results document does not prescribe a production architecture or Tracktion adoption.
+Phase D is complete. The next execution-plan step is Phase E — PDC, beginning with the deterministic latency processor and requiring `alignment error = 0 timeline samples`. It was intentionally not implemented or executed in this task. This results document does not prescribe a production architecture or Tracktion adoption.
 
 ## 8. ADR readiness
 
