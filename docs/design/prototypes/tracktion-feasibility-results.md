@@ -2,11 +2,11 @@
 
 ## Recommendation
 
-**Inconclusive overall; Phase 1 — Build bootstrap: Pass.**
+**Inconclusive overall; Phase 1 — Build bootstrap: Pass; Phase A — Framework boundary and reconstruction: Pass; Phase B — Integer Timeline Sample: Pass.**
 
-The original Phase 1 environment block has been resolved. The pinned Tracktion/JUCE sources configure, build, and launch in a prototype-only headless executable on this Windows environment. The overall feasibility conclusion remains Inconclusive because this task is explicitly limited to Phase 1; Phases A–I have not been run. No ADR is created.
+The original Phase 1 environment block has been resolved. The pinned Tracktion/JUCE sources configure, build, and launch in a prototype-only headless executable on this Windows environment. Phase A established the bounded framework boundary and reconstruction path without making Tracktion runtime state authoritative. Phase B then demonstrated zero-error integer-sample observation for the specified fixed-rate, long Timeline, and mixed-rate fixtures. The overall feasibility conclusion remains Inconclusive because this task is explicitly limited to Phase B; Phases C–I have not been run. No ADR is created.
 
-The execution plan requires each phase to pass before the next begins. This result does not infer any Phase A–I behaviour from the bootstrap target.
+The execution plan requires each phase to pass before the next begins. This result does not infer any Phase C–I behaviour from the bootstrap, Phase A, or Phase B targets.
 
 ## 1. Environment
 
@@ -39,6 +39,36 @@ The raw Phase 0/1 command results and observations are in [phase-0-1.md](../../.
 | Device-free startup/shutdown | Pass — CTest launched it and passed in 0.40 s; it does not select or open an audio device |
 | Production dependency leakage | Pass — dependencies and includes are contained in `prototype/tracktion-feasibility/`; root CMake only adds that directory |
 
+## 1.2 Phase A reconstruction result
+
+The raw fixture, command result, and observation record are in [phase-a.md](../../../benchmark-results/tracktion-feasibility/phase-a.md).
+
+| Criterion | Result |
+| --- | --- |
+| Framework-free Minimal Domain State | Pass — standard C++ value data contains IDs, Timeline/Source integer samples, processor descriptions, gain, and pan; it contains no Tracktion/JUCE type or runtime identity. |
+| Separate transport state | Pass — stopped/playhead 24000 samples is independent of Project state. |
+| Domain → Adapter → Runtime direction | Pass — adapter reads fixture state to construct runtime; no reverse synchronization occurs. |
+| Source Media mapping | Pass — adapter-local source registry resolves the runtime reference to the generated fixture WAV; it is not persisted in Domain State. |
+| Destroy / reconstruct | Pass — domain is unchanged after destroy; reconstructed observation equals the original. |
+| Runtime observation | Pass — counts, Timeline/Source sample ranges, gain/pan, empty processor order, and transport setup match the fixture. |
+| Phase A hard stop | Not reached — no Tracktion object graph, serialization, runtime identity, or reverse synchronization is required as authoritative state. |
+
+## 1.3 Phase B integer Timeline result
+
+The raw fixture definitions, runtime observations, and command result are in [phase-b.md](../../../benchmark-results/tracktion-feasibility/phase-b.md).
+
+| Criterion | Result |
+| --- | --- |
+| Authoritative Timeline state | Pass — Timeline position and duration remain `int64_t` samples at the Project Timeline Sample Rate. |
+| Authoritative Source state | Pass — Source position and duration remain separate `int64_t` samples at Media native sample rate. |
+| Framework leakage | Pass — no Tracktion/JUCE time type enters Domain State. |
+| 48 kHz arbitrary positions | Pass — 14 positions, including 0, 1, 47999/48000/48001, and arbitrary values, observe at 0 sample difference. |
+| Long Timeline positions | Pass — 1/3/6/12 hour anchors and each ±1 sample observe at 0 sample difference. |
+| 44.1 kHz Source / 48 kHz Project | Pass — six distinct Source offsets and one-second 44100/48000 durations preserve their separate domains at 0 sample difference. |
+| Repeated reconstruction | Pass — 10 reconstructions per fixture, 30 total; Domain State is unchanged and observations are equal per fixture. |
+| Maximum observed mapping error | Pass — `0` samples. |
+| Phase B hard fail | Not reached — runtime seconds remain adapter details and do not replace the Domain's integer state. |
+
 ## 2. Dependency revisions and licence/NOTICE record
 
 | Component | Exact revision | Status |
@@ -53,25 +83,25 @@ The source notices at the pinned revisions were inspected and their bundled-depe
 
 | Test | Phase | Status | Evidence / reason |
 | --- | ---: | --- | --- |
-| T-001 reconstruction | A | Inconclusive | Not started: outside this Phase 1-only task. |
-| T-002 integer sample round-trip | B | Inconclusive | Not started: Phase A is a prerequisite. |
-| T-003 overlap / Track Mix | C | Inconclusive | Not started: Phases A–B are prerequisites. |
+| T-001 reconstruction | A | Pass | Framework-free fixture constructs, destroys, and reconstructs with equal observation; see `phase-a.md`. |
+| T-002 integer sample round-trip | B | Pass | Three fixtures, 32 Clip observations, and 30 reconstructions report maximum error 0 samples; see `phase-b.md`. |
+| T-003 overlap / Track Mix | C | Inconclusive | Not started: Phase B passed; this task stops before Phase C. |
 | T-004 Processing Stack order | D | Inconclusive | Not started: Phase C is a prerequisite. |
 | T-005 PDC | E | Inconclusive | No deterministic latency processor or VST3 plugin was implemented. |
 | T-006 Effect Tail | F | Inconclusive | No deterministic Tail processor was implemented. |
-| T-007 runtime editing | G | Inconclusive | Not started: outside this Phase 1-only task. |
-| T-008 long source | H | Inconclusive | Not started: outside this Phase 1-only task. |
-| T-009 dense edit | H | Inconclusive | Not started: outside this Phase 1-only task. |
+| T-007 runtime editing | G | Inconclusive | Not started: outside this Phase B-only task. |
+| T-008 long source | H | Inconclusive | Not started: outside this Phase B-only task. |
+| T-009 dense edit | H | Inconclusive | Not started: outside this Phase B-only task. |
 | T-010 headless / failure injection | I | Inconclusive | Bootstrap executable exists, but Phase I automation and failure injection are outside this task. |
 
 ## 4. Measurements
 
-No runtime-derived measurements exist. The following required measurements are explicitly unmeasured rather than assigned invented values:
+Only the bounded Phase A runtime-construction/reconstruction measurements exist. The following required measurements are explicitly unmeasured rather than assigned invented values:
 
 | Measurement | Result |
 | --- | --- |
-| Runtime construction | Phase 1 Pass — the bootstrap executable constructed and destroyed `tracktion::engine::Engine`; no Domain-to-runtime reconstruction was attempted. |
-| Integer sample mapping | Not executed — no adapter/runtime mapping. |
+| Runtime construction | Phase A Pass — Domain fixture constructed one runtime, then after destruction reconstructed to an equal observation. |
+| Integer sample mapping | Phase B Pass — 32 observations across 48 kHz, long Timeline, and 44.1/48 kHz fixtures; maximum observed error = 0 samples. |
 | Overlap / Track Mix | Not executed — no offline render. |
 | Processing Stack order | Not executed — no processor mapping. |
 | PDC | Not executed — no deterministic latency processor; `alignment error = 0 timeline samples` was **not** established. |
@@ -87,22 +117,23 @@ No runtime-derived measurements exist. The following required measurements are e
 
 | Hypothesis | Status | Basis |
 | --- | --- | --- |
-| H1 Domain Independence | Inconclusive | An Engine was constructed, but no Minimal Domain State or reconstruction path was implemented. |
-| H3 Integer Timeline Sample | Inconclusive | No mapping occurred. |
+| H1 Domain Independence | Pass (Phase A scope) | `MinimalDomainState` is framework-free and unchanged across runtime destroy/rebuild; runtime types are confined to the adapter/runtime. |
+| H2 Runtime Reconstruction | Pass (Phase A scope) | Same domain fixture produces an equal runtime observation after destroy/reconstruct. |
+| H3 Integer Timeline Sample | Pass (Phase B scope) | Integer Domain state remains authoritative through 30 reconstructions; all requested Timeline and Source fields observe at 0 sample difference. |
 | H6 PDC | Inconclusive | No deterministic test processor/runtime exists. |
 | H7 Effect Tail | Inconclusive | No deterministic test processor/runtime exists. |
 
-No hard stop was reached. Phase 1 passed, but it does not evaluate H1, H3, H6, or H7.
+No hard stop was reached. Phases A/B passed H1/H2/H3 but do not evaluate H6 or H7.
 
 ## 6. Domain-boundary and scope review
 
-No production source exists or was changed. No Tracktion, JUCE, or VST3 type, runtime identity, runtime serialization, pointer, or binary artifact was introduced into an AudioNLE Domain model.
+No production source exists or was changed. Phase A code is under `prototype/tracktion-feasibility/` only. No Tracktion, JUCE, or VST3 type, runtime identity, runtime serialization, pointer, or binary artifact was introduced into an AudioNLE Domain model.
 
-No Project persistence, GUI, media import, synchronization-group/member behaviour, Clip Group behaviour, or Ripple semantics was delegated to Tracktion or implemented. The prototype's intended `Domain → Adapter → Runtime` direction was therefore not violated, but also remains unverified at runtime.
+No Project persistence, GUI, media import, synchronization-group/member behaviour, Clip Group behaviour, or Ripple semantics was delegated to Tracktion or implemented. The prototype's `Domain → Adapter → Runtime` direction was exercised for the Phase A and B fixtures. The adapter-owned source resolver is an input mapping table only; it is not Project persistence or authoritative state. Runtime seconds are observed only and are never synchronized back to Domain State.
 
 ## 7. Required next limited action
 
-Phase 1 is complete. The next execution-plan step would be Phase A, using the existing prototype-only boundary and the recorded SHAs. It was intentionally not implemented or executed in this task. This results document does not prescribe a production architecture or Tracktion adoption.
+Phase B is complete. The next execution-plan step is Phase C — Basic Signal Flow, using the existing prototype-only boundary and recorded SHAs. It was intentionally not implemented or executed in this task. This results document does not prescribe a production architecture or Tracktion adoption.
 
 ## 8. ADR readiness
 
