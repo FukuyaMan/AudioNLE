@@ -2,7 +2,7 @@
 
 Execution date: 2026-09-06 (Asia/Tokyo)
 
-Scope: evidence after Phase 0, A2-1, A2-2, conditional A2-3, deterministic low-level PDC, and the actual-VST3 hard-stop investigation. This is not an estimate of a production engine.
+Scope: evidence after Phase 0, A2-1, A2-2, conditional A2-3, deterministic low-level PDC, the actual-VST3 hard-stop diagnostic, and the corrected actual-VST3 PDC retry. This is not an estimate of a production engine.
 
 ## Measured prototype surface
 
@@ -14,7 +14,8 @@ Scope: evidence after Phase 0, A2-1, A2-2, conditional A2-3, deterministic low-l
 | Public Tracktion concept inspected but not instantiated | `Renderer::RenderTask` existing-graph constructor (1) |
 | Private/internal API count | 0 |
 | Patch/fork count | 0 |
-| Actual VST3 diagnostic | Public host reports 0 before prepare and 1024 after public prepare; actual fixture delay is 1024 after a fixture-only index correction. Actual PDC remains unrun. |
+| Actual VST3 retry | Four generated fixture variants (256/768/1024/2048); public host, actual delay, adapter latency, and root graph agree, with 0-sample maximum PDC error. |
+| Deterministic Tail | AudioNLE fixture plans post-source silence and Processing End; Tracktion graph processes Tail and `SummingNode` mixes overlap. |
 | High-level Clip/source scheduling, source reader, or plugin components | 0 |
 | Production-directory changes | 0 |
 
@@ -28,7 +29,7 @@ Scope: evidence after Phase 0, A2-1, A2-2, conditional A2-3, deterministic low-l
 | Node graph ownership/preparation, dependency traversal, and block processing | Tracktion public graph/player | `SimpleNodePlayer` owns/prepares the root `NodeGraph`, orders input Nodes, and processes it. |
 | Track Mix / summing | Tracktion public `SummingNode` | Two sources `0.25 + 0.5` observe as `0.75`, then Track Multiply observes 1.5. |
 | Offline output-buffer ownership | AudioNLE test harness | Caller supplies the output buffer; this makes sample observation explicit. |
-| Latency property/graph transformation | Tracktion public graph API | `NodeProperties::latencyNumSamples`, `LatencyNode`, and `SummingNode` public transformation were exercised in the bounded deterministic PDC fixture. Hosted plugin latency is 1024 after public prepare; actual plugin PDC remains unmeasured. |
+| Latency property/graph transformation | Tracktion public graph API | `NodeProperties::latencyNumSamples`, `LatencyNode`, and `SummingNode` were exercised in deterministic and actual-VST3 fixtures. The adapter exposes post-prepare hosted latency; `SummingNode` retains graph-wide balancing ownership. |
 | PDC metadata, delay, and branch balancing | Tracktion public `LatencyNode` / `SummingNode` | Measured for 256, 1024, and 2048 samples, Clip/Track-equivalent paths, accumulated layers, reorder, stopped/rebuild change, bypass, and reconstruction. `SummingNode` performs `maxLatency - pathLatency` insertion; the adapter has no manual compensation calculation. |
 | Ordered deterministic processing graph behavior | Measured for bounded A2-2 | Add/Multiply order, layers, timing, and reconstruction pass through public Node graph. Plugin lifecycle remains unmeasured. |
 | Source read/seek/reset and resampling for real media | Unmeasured | A2-3 proves only sparse-event integer placement; it does not provide an audio resampler, reader, seek/reset policy, or quality result. |
@@ -42,4 +43,10 @@ The prototype does not create or delegate Synchronization Group/Member, Clip Gro
 
 ## Assessment
 
-The measured glue burden remains materially below a custom graph runner for the bounded generated-source, integer-rational event-mapping, ordered-processing, Track Mix, and deterministic PDC cases. The public host provides the fixed-fixture latency-report contract after the required lifecycle, but actual VST3 PDC remains untested. No conclusion about production plugin hosting can be inferred, and a manual compensation adapter would violate this prototype's hard-stop rule.
+The measured glue burden remains materially below a custom graph runner for the bounded generated-source, integer-rational event-mapping, ordered-processing, Track Mix, deterministic PDC, and actual fixed-fixture VST3 PDC cases. The adapter has no manual compensation. No conclusion about third-party compatibility or production plugin hosting can be inferred.
+
+## Actual VST3 Tail update
+
+The finite-tail fixture adds one generated local VST3 target, one hosted-plugin node adapter, explicit finite seconds-to-integer-samples conversion, and TailPolicy-bound output scheduling. It reuses the existing known-path public VST3 lifecycle and public graph/player path; it adds no Tracktion/JUCE patch, private API, high-level source scheduling, manual post-mix, or persistent plugin identity.
+
+AudioNLE retains the Planning responsibility for Source End, integer Processing End, finite-tail conversion, and whether `Reported` or `CutAtSourceEnd` exposes post-source output. The runtime owns the hosted VST3 instance and its transient buffers. Tracktion continues to own node traversal, downstream propagation, and `SummingNode` mix. The fixture demonstrates 1024 samples of actual/report equality at 48 kHz, but no unknown/infinite policy or combined PDC-plus-Tail behavior; those remain future complexity risks.

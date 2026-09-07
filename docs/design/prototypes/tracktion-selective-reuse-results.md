@@ -18,6 +18,22 @@ The initial actual-VST3 V2 hard stop has now received a separately authorised ro
 
 ## Scope and environment
 
+## Corrected actual-VST3 PDC update
+
+The separately authorised corrected retry is a **Conditional Pass**. Generated repository-local VST3 fixtures at 256, 768, 1024, and 2048 samples now satisfy the declared, post-prepare hosted, measured actual, adapter, and root-graph latency contract. The two-path, Clip/Track-equivalent, mixed-layer (deterministic Clip 256 + VST3 Track 768), processing-order, adapter-policy bypass, stopped destroy/rebuild 1024 -> 2048, and reconstruction cases all measure `alignment error = 0 Timeline samples`.
+
+Tracktion's public `SummingNode` owns branch balancing; the adapter exposes only the hosted post-prepare latency and has no `maxLatency - pathLatency` computation, delay injection, source/output shift, private API, patch, fork, or reverse Domain synchronization. This result is bounded: arbitrary third-party plugin compatibility, dynamic playback-time latency changes, scanner/state work, production bypass semantics, crash isolation, Tail, Phase F, realtime work, and production hosting remain unmeasured. See [the raw actual-VST3 PDC record](../../../benchmark-results/tracktion-selective-reuse/vst3-pdc.md).
+
+## Phase F deterministic Tail update
+
+**Conditional Pass.** The low-level graph preserves distinct integer Source End 1480 and Processing End 2504 for a finite reported 1024-sample tail. It feeds silence after the source, processes a downstream multiply, mixes a subsequent Clip through public `SummingNode`, moves the full processing output by +48000, removes it on delete, honors `CutAtSourceEnd`, and reconstructs identically. See [tail.md](../../../benchmark-results/tracktion-selective-reuse/tail.md). Actual VST3 Tail, unknown/infinite tails, realtime edits, and production render planning remain unmeasured.
+
+## Actual VST3 Tail update
+
+**Conditional Pass for the bounded fixture.** A repository-local VST3 fixture reports `1024 / 48000` through the pinned public JUCE VST3 host API after prepare; explicit `llround` conversion returns 1024 integer Timeline samples. With Source End 1480, the actual hosted plugin receives zero input after the source and emits non-zero output exactly over `[1480,2504)`. Its tail reaches a downstream Multiply(2), overlaps an independent source through public `SummingNode` at 0.75, moves by exactly +48000, disappears on delete or `CutAtSourceEnd`, and reconstructs identically. No high-level source scheduler, private API, patch/fork, hard-coded adapter tail, manual Tail mix, or Domain mutation was used. See [vst3-tail.md](../../../benchmark-results/tracktion-selective-reuse/vst3-tail.md).
+
+The PDC-plus-Tail combination is deliberately deferred: prior bounded actual-VST3 PDC and this Tail result are separate evidence. Third-party VST3 tail behavior; zero, unknown, or infinite production policies; dynamic reports; realtime behavior; production render planning; scanner/state/crash isolation; GUI; and ADRs remain unmeasured. Option A2 therefore remains **Proceed with Constraints**, not a production-engine selection.
+
 | Item | Value |
 | --- | --- |
 | Execution date | 2026-09-06 (Asia/Tokyo) |
@@ -69,3 +85,15 @@ Tracktion is actually reused for the public node graph, graph preparation, depen
 The deterministic low-level PDC gate has now been exercised and is **Conditional Pass**. It uses only the Option A2 custom-source path, public `LatencyNode`, public `SummingNode`, and `SimpleNodePlayer`; automatic graph balancing belongs to Tracktion, while Domain processor state remains authoritative and one-way. The high-level Phase E PDC result remains independently **Inconclusive** and cannot be repaired or replaced by this result.
 
 Actual VST3 PDC retry may be considered only through separate authorization; it is now technically ready because public host-visible and actual fixture delay are both 1024. Tail, Phase F, production implementation, realtime dynamic latency change, production bypass semantics, and ADR work remain unauthorized by this result.
+
+## Real-media / long-source update
+
+**Proceed with Constraints.** The Option A2 custom source boundary now has bounded same-rate real-media evidence: public JUCE WAV range reads behind AudioNLE-owned integer scheduling preserve all small-fixture and block/render-start markers at 0 Timeline-sample error; seek/reset/rebuild is deterministic; EOF/error behavior is explicit; and a one-hour-plus-one-sample WAV is read at beginning, 1 minute, 10 minutes, and 1 hour without retaining duration-scaled decoded PCM. The real WAV source also reaches public downstream `MultiplyNode` and `SummingNode` processing with exact amplitude and timing, including a graph rebuild.
+
+This is not evidence for realtime behavior, compressed/container media, production cache/prefetch, FFmpeg, or mixed-rate real media. The selected JUCE reader is synchronous and may perform I/O, allocation, decode, or blocking in the offline source node. A separately scoped 44.1 kHz Source -> 48 kHz Timeline real-media gate is justified but deferred; SRC mapping/quality/latency, decoder seek/preroll, cache, ownership, and realtime handoff remain open. See [real-media results](tracktion-selective-reuse-real-media-results.md), [raw measurements](../../../benchmark-results/tracktion-selective-reuse/real-media.md), and [complexity review](../../../benchmark-results/tracktion-selective-reuse/real-media-complexity.md).
+
+## Realtime source update
+
+**Proceed with Constraints.** The bounded Option A2 realtime-source gate now separates reader work from callback supply using fixed pages, a worker-owned public JUCE reader, runtime-only generations, exact-zero underrun output, and page ownership that excludes worker overwrite while callback readers copy. Same-rate markers, rapid seek, 257-frame non-divisible cross-page processing, bounded-memory observation, worker destruction/rebuild, and downstream Multiply(2) pass at zero Timeline-sample error. Q9’s initial failure was a PCM16 expected-value bug, not a graph-path failure; corrected processing compares against decoded source PCM. The source subsystem is a substantial adapter subsystem, while Tracktion still provides graph traversal, processing, summing, PDC, VST3 graph integration, Tail flow, and headless execution. See [realtime-source results](tracktion-selective-reuse-realtime-source-results.md).
+
+This does not establish device-callback behavior, OS dropout guarantees, production cache sizing, multiple-source/dense-Clip scaling, runtime edits, mixed-rate/SRC, FFmpeg/compressed media, persistence, or a final architecture decision. The next recommended feasibility gate is dense / multi-source / runtime-edit source scheduling.

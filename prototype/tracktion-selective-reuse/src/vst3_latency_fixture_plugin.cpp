@@ -2,6 +2,10 @@
 
 #include <array>
 
+#ifndef A2_LATENCY_SAMPLES
+#error A2_LATENCY_SAMPLES must be defined for this fixture target
+#endif
+
 class A2LatencyFixture final : public juce::AudioProcessor
 {
 public:
@@ -9,7 +13,7 @@ public:
         : AudioProcessor (BusesProperties().withInput ("Input", juce::AudioChannelSet::mono(), true)
                                              .withOutput ("Output", juce::AudioChannelSet::mono(), true))
     {
-        setLatencySamples (1024);
+        setLatencySamples (A2_LATENCY_SAMPLES);
     }
 
     const juce::String getName() const override { return "A2 Latency Fixture"; }
@@ -26,7 +30,7 @@ public:
             const auto input = channel[i];
             channel[i] = delay[static_cast<std::size_t> (write)];
             delay[static_cast<std::size_t> (write)] = input;
-            write = (write + 1) % 1024;
+            write = (write + 1) % A2_LATENCY_SAMPLES;
         }
     }
     bool hasEditor() const override { return false; }
@@ -42,7 +46,7 @@ public:
     void getStateInformation (juce::MemoryBlock&) override {}
     void setStateInformation (const void*, int) override {}
 private:
-    std::array<float, 1024> delay {};
+    std::array<float, A2_LATENCY_SAMPLES> delay {};
     int write = 0;
 };
 
