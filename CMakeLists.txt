@@ -6,3 +6,4 @@ enable_testing()
 
 add_subdirectory(prototype/tracktion-feasibility)
 add_subdirectory(prototype/tracktion-selective-reuse)
+add_subdirectory(prototype/option-b-low-level-graph)

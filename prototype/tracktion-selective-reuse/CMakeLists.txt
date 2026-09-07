@@ -88,6 +88,10 @@ add_executable(tracktion_selective_reuse_realtime_source
     src/realtime_source_main.cpp
 )
 
+add_executable(tracktion_selective_reuse_multisource
+    src/multisource_main.cpp
+)
+
 
 
 target_compile_features(tracktion_selective_reuse_a2_1 PRIVATE cxx_std_20)
@@ -119,6 +123,8 @@ target_compile_features(tracktion_selective_reuse_real_media PRIVATE cxx_std_20)
 target_link_libraries(tracktion_selective_reuse_real_media PRIVATE tracktion::tracktion_engine Psapi)
 target_compile_features(tracktion_selective_reuse_realtime_source PRIVATE cxx_std_20)
 target_link_libraries(tracktion_selective_reuse_realtime_source PRIVATE tracktion::tracktion_engine Psapi)
+target_compile_features(tracktion_selective_reuse_multisource PRIVATE cxx_std_20)
+target_link_libraries(tracktion_selective_reuse_multisource PRIVATE tracktion::tracktion_engine Psapi)
 
 if(MSVC)
     target_compile_options(tracktion_selective_reuse_a2_1 PRIVATE /utf-8)
@@ -130,6 +136,7 @@ if(MSVC)
     target_compile_options(tracktion_selective_reuse_vst3_tail PRIVATE /utf-8)
     target_compile_options(tracktion_selective_reuse_real_media PRIVATE /utf-8)
     target_compile_options(tracktion_selective_reuse_realtime_source PRIVATE /utf-8)
+    target_compile_options(tracktion_selective_reuse_multisource PRIVATE /utf-8)
 endif()
 
 add_test(NAME tracktion_selective_reuse_a2_1_custom_source
@@ -158,3 +165,6 @@ add_test(NAME tracktion_selective_reuse_real_media
 
 add_test(NAME tracktion_selective_reuse_realtime_source
     COMMAND tracktion_selective_reuse_realtime_source)
+
+add_test(NAME tracktion_selective_reuse_multisource
+    COMMAND tracktion_selective_reuse_multisource)
