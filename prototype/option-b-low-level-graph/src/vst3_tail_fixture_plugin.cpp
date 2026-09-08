@@ -1,0 +1,8 @@
+#include <juce_audio_processors/juce_audio_processors.h>
+class OptionBTailFixture final : public juce::AudioProcessor { public:
+ OptionBTailFixture():AudioProcessor(BusesProperties().withInput("Input",juce::AudioChannelSet::mono(),true).withOutput("Output",juce::AudioChannelSet::mono(),true)){}
+ const juce::String getName()const override{return "Option B Finite Tail";} void prepareToPlay(double,int)override{left=0;} void releaseResources()override{}
+ bool isBusesLayoutSupported(const BusesLayout& l)const override{return l.getMainInputChannelSet()==juce::AudioChannelSet::mono()&&l.getMainOutputChannelSet()==juce::AudioChannelSet::mono();}
+ void processBlock(juce::AudioBuffer<float>& b,juce::MidiBuffer&)override{auto*x=b.getWritePointer(0);for(int i=0;i<b.getNumSamples();++i){auto in=x[i];if(in!=0){x[i]=in;left=1024;}else if(left>0){x[i]=.125f;--left;}else x[i]=0;}}
+ bool hasEditor()const override{return false;} juce::AudioProcessorEditor* createEditor()override{return nullptr;} double getTailLengthSeconds()const override{return 1024.0/48000.0;} bool acceptsMidi()const override{return false;} bool producesMidi()const override{return false;} int getNumPrograms()override{return 1;} int getCurrentProgram()override{return 0;} void setCurrentProgram(int)override{} const juce::String getProgramName(int)override{return{};} void changeProgramName(int,const juce::String&)override{} void getStateInformation(juce::MemoryBlock&)override{} void setStateInformation(const void*,int)override{} private:int left=0;};
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter(){return new OptionBTailFixture();}

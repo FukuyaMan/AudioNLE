@@ -1,0 +1,5 @@
+# Option B Realtime Source Handoff Evidence
+
+48 kHz mono PCM16 WAV, 128-frame B graph blocks, and 257-frame fixed pages passed. R2 real-WAV markers, R6 cross-page/block-interior access, R7 Multiply(2), R8 two views over one runtime, and R9 fresh reconstruction passed at maximum timing error 0. R4 deliberate miss produced exact zero/underrun then recovered after worker release. R5 discarded one stale MediaGeneration completion and rendered the new request exactly.
+
+SourceNode counters: reader/file/decode 0, wait/block/spin 0, allocation/growth 0, synchronous fallback 0. Worker reads occur only on the worker. R10 used duration 172800001 samples, fixed cache 8 x 257 x float = 8224 bytes, fixed SourceNode scratch 512 bytes, and retained full-source PCM 0. Representative process working set was 8253440, 8253440, and 8249344 bytes over three direct runs; this modest OS/runtime variation is not a hard memory bound. No duration-scaled source storage was observed. This is a bounded single-request handoff fixture only; production multi-range arbitration remains unresolved.
