@@ -34,7 +34,8 @@ if (-not (Test-Path -LiteralPath (Join-Path $vcpkgRoot '.git'))) {
 $currentVcpkgCommit = (git -C $vcpkgRoot rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Failed to identify the repository-local vcpkg revision.' }
 
-if ($currentVcpkgCommit -ne $vcpkgCommit) {
+$vcpkgBootstrapScript = Join-Path $vcpkgRoot 'bootstrap-vcpkg.bat'
+if ($currentVcpkgCommit -ne $vcpkgCommit -or -not (Test-Path -LiteralPath $vcpkgBootstrapScript)) {
     $vcpkgChanges = git -C $vcpkgRoot status --porcelain
     if ($LASTEXITCODE -ne 0) { throw 'Failed to inspect the repository-local vcpkg checkout.' }
     if ($vcpkgChanges) {
@@ -58,7 +59,7 @@ $bootstrappedCommit = if (Test-Path -LiteralPath $bootstrapStamp) {
 if (-not (Test-Path -LiteralPath $vcpkgExe) -or $bootstrappedCommit -ne $vcpkgCommit) {
     Push-Location $vcpkgRoot
     try {
-        .\bootstrap-vcpkg.bat -disableMetrics
+        & $vcpkgBootstrapScript -disableMetrics
         if ($LASTEXITCODE -ne 0) { throw 'Failed to bootstrap repository-local vcpkg.' }
         Set-Content -NoNewline -LiteralPath $bootstrapStamp -Value $vcpkgCommit
     } finally {
