@@ -96,6 +96,11 @@ foreach ($entry in $developerEnvironment) {
 if (Test-Path -LiteralPath $vst3HelperDirectory) {
     Remove-Item -LiteralPath $vst3HelperDirectory -Recurse -Force
 }
+
+if (-not [string]::IsNullOrWhiteSpace($env:VCPKG_DEFAULT_BINARY_CACHE) -and -not (Test-Path -LiteralPath $env:VCPKG_DEFAULT_BINARY_CACHE)) {
+    New-Item -ItemType Directory -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+}
+
 & cmake -S $PSScriptRoot -B $buildDirectory --fresh -G Ninja "-DCMAKE_BUILD_TYPE=$Configuration" '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' "-DCMAKE_TOOLCHAIN_FILE=$vcpkgRoot\scripts\buildsystems\vcpkg.cmake" '-DVCPKG_TARGET_TRIPLET=x64-windows'
 if ($LASTEXITCODE -ne 0) { throw 'CMake configure (including vcpkg manifest install) failed.' }
 
