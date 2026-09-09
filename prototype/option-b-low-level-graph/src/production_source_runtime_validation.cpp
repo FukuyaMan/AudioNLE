@@ -43,7 +43,7 @@ void run() {
   // Sustain mixed demand through bounded queues, then prove drain recovery and fair service.
   for(unsigned i=0;i<16;++i) { nativeNode.process(graph.views[0],i*256,64,output.data()); preparedNode.process(graph.views[2],i*256,64,output.data()); } worker.drain(); const auto metrics=worker.metrics(); require(metrics.submitted>0&&metrics.completed>0&&!metrics.starvationObserved,"fair bounded worker"); require(renderAfterDrain(nativeNode,graph.views[0],0,worker,output.data())==SourceRenderResult::Ready,"native recovery");
   require(prepared.preparedCalls()>0&&prepared.realtimeCalls()==0,"prepared required never fallback"); require(realtime.realtimeCalls()>0&&native.realtimeCalls()==0,"route SRC counts");
-  std::cout<<"production source runtime fairness submitted="<<metrics.submitted<<" coalesced="<<metrics.coalesced<<" completed="<<metrics.completed<<" queue-full="<<metrics.queueFull<<" max-gap="<<metrics.maxObservedServiceGap<<" starvation="<<metrics.starvationObserved<<" three-hour-samples="<<kThreeHours48<<" shared-native-bytes="<<NativeSourceService::bytes()<<" prepared-pages=16 PASS\n";
+  std::cout<<"production source runtime fairness submitted="<<metrics.submitted<<" coalesced="<<metrics.coalesced<<" completed="<<metrics.completed<<" queue-full="<<metrics.queueFull<<" max-gap="<<metrics.maxObservedServiceGap<<" starvation="<<metrics.starvationObserved<<" three-hour-samples="<<kThreeHours48<<" shared-native-bytes="<<nativeShared->service().bytes()<<" prepared-pages=16 PASS\n";
   std::error_code error; std::filesystem::remove_all(root,error);
 }
 }

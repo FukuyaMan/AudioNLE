@@ -9,6 +9,7 @@
 #include "source_runtime_contract.hpp"
 
 namespace audionle::source_runtime {
+struct AudioBuffer { float* data{}; unsigned frames{}, channels{}; bool interleaved{true}; };
 
 class SourceRuntime final {
  public:
@@ -50,6 +51,7 @@ class SourceNode final {
  public:
   explicit SourceNode(SourceRuntime&) noexcept;
   SourceRenderResult process(ClipRuntimeView const&, std::int64_t timeline, unsigned frames, float*) noexcept;
+  SourceRenderResult process(ClipRuntimeView const&, std::int64_t timeline, AudioBuffer) noexcept;
  private:
   SourceRuntime& runtime_;
 };

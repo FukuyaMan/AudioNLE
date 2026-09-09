@@ -2,3 +2,5 @@ AGENTS.md
 .agents/*
 /build/
 /.vscode/
+/third_party/vcpkg/
+/vcpkg_installed/

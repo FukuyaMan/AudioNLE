@@ -13,6 +13,7 @@ struct RuntimeIdentity {
   std::uint64_t source{}, generation{}, stream{}, config{};
   std::uint32_t sourceRate{}, projectRate{}, p{}, q{}, channels{};
   Admission admission{};
+  std::uint64_t channelLayout{}; // V1 canonical: 1=mono, 2=stereo interleaved.
 };
 
 struct ClipRuntimeView {

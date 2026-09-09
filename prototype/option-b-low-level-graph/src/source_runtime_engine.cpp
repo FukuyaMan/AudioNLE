@@ -18,8 +18,8 @@ class SourceRuntime::Impl final {
  public:
   Impl(RuntimeIdentity identity, std::filesystem::path artifact, SharedNativeSourceRuntimePtr shared,
        PreparedResidencyPtr prepared)
-      : id(std::move(identity)), shared(shared ? std::move(shared) : std::make_shared<SharedNativeSourceRuntime>(id.source, id.generation)) {
-    if (this->shared->source() != id.source || this->shared->generation() != id.generation) throw std::runtime_error("shared runtime identity");
+      : id(std::move(identity)), shared(shared ? std::move(shared) : std::make_shared<SharedNativeSourceRuntime>(id.source, id.generation,4096,id.channels)) {
+    if (this->shared->source() != id.source || this->shared->generation() != id.generation || !id.channels || id.channels>NativeSourceService::maxChannels) throw std::runtime_error("shared runtime identity");
     this->shared->prime();
     if (id.admission == Admission::PreparedRequired) {
       const PreparedArtifactKey key{id.source, id.generation, id.config, id.channels, id.projectRate};
@@ -27,12 +27,12 @@ class SourceRuntime::Impl final {
       this->prepared = prepared ? std::move(prepared) : makePreparedResidency(std::move(artifact), key);
     }
     if (id.admission == Admission::GuaranteedRealtime || id.admission == Admission::BestEffortRealtime) {
-      int error{}; src = src_new(SRC_SINC_BEST_QUALITY, 1, &error); require(src && error == 0, "src configure");
+      int error{}; src = src_new(SRC_SINC_BEST_QUALITY, int(id.channels), &error); require(src && error == 0, "src configure");
     }
   }
   ~Impl() { if (src) src_delete(src); }
   RuntimeIdentity id; SharedNativeSourceRuntimePtr shared; PhysicalSrcRangePlanner planner{};
-  std::array<float, 2048> nativeInput{}; SRC_STATE* src{}; PreparedResidencyPtr prepared{};
+  std::array<float, 4096> nativeInput{}; SRC_STATE* src{}; PreparedResidencyPtr prepared{};
   unsigned native{}, realtime{}, preparedCalls{}, preparedMisses{};
 };
 
@@ -41,7 +41,7 @@ SourceRuntime::SourceRuntime(RuntimeIdentity identity, std::filesystem::path art
     : impl_(std::make_unique<Impl>(identity, std::move(artifact), std::move(shared), std::move(prepared))) {}
 SourceRuntime::~SourceRuntime() = default;
 SourceRenderResult SourceRuntime::render(ClipRuntimeView const& view, std::int64_t timeline, unsigned frames, float* output) noexcept {
-  auto& r = *impl_; std::fill_n(output, frames, 0.0f);
+  auto& r = *impl_; std::fill_n(output, size_t(frames)*r.id.channels, 0.0f);
   if (view.identity.generation != r.id.generation) return SourceRenderResult::Stale;
   const auto source = view.sourceAt(timeline); if (source < 0) return SourceRenderResult::Unavailable;
   if (r.id.admission == Admission::NativeRate) {
@@ -54,7 +54,7 @@ SourceRenderResult SourceRuntime::render(ClipRuntimeView const& view, std::int64
   }
   PhysicalSrcRangePlan plan{};
   if (!r.planner.plan(view.sourceStart, timeline - view.timelineStart, r.id.p, r.id.q, frames, r.shared->sourceFrames(), plan) || !r.src ||
-      frames * 2 > r.nativeInput.size() || !r.shared->service().copy(source, frames * 2, r.id.generation, r.nativeInput.data())) return SourceRenderResult::Unavailable;
+      size_t(frames) * 2 * r.id.channels > r.nativeInput.size() || !r.shared->service().copy(source, frames * 2, r.id.generation, r.nativeInput.data())) return SourceRenderResult::Unavailable;
   SRC_DATA data{}; data.data_in = r.nativeInput.data(); data.input_frames = frames * 2; data.data_out = output; data.output_frames = frames;
   data.src_ratio = double(r.id.projectRate) / r.id.sourceRate;
   if (src_process(r.src, &data) != 0) return SourceRenderResult::Failed;
@@ -90,7 +90,8 @@ SharedSourceWorker::Metrics SharedSourceWorker::metrics() const noexcept {
 }
 SourceNode::SourceNode(SourceRuntime& runtime) noexcept : runtime_(runtime) {}
 SourceRenderResult SourceNode::process(ClipRuntimeView const& view, std::int64_t timeline, unsigned frames, float* output) noexcept { return runtime_.render(view, timeline, frames, output); }
+SourceRenderResult SourceNode::process(ClipRuntimeView const& view, std::int64_t timeline, AudioBuffer output) noexcept { if(!output.data||!output.interleaved||output.channels!=view.identity.channels){if(output.data)std::fill_n(output.data,size_t(output.frames)*output.channels,0.0f);return SourceRenderResult::Unsupported;}return runtime_.render(view,timeline,output.frames,output.data); }
 RuntimeIdentity makeRuntimeIdentity(std::uint64_t source, std::uint32_t sourceRate, Admission admission) noexcept {
-  const auto gcd = std::gcd(sourceRate, 48000u); return {source, 1, 0, 77, sourceRate, 48000, 48000u / gcd, sourceRate / gcd, 1, admission};
+  const auto gcd = std::gcd(sourceRate, 48000u); auto identity=RuntimeIdentity{source, 1, 0, 77, sourceRate, 48000, 48000u / gcd, sourceRate / gcd, 1, admission}; identity.channelLayout=1; return identity;
 }
 } // namespace audionle::source_runtime
