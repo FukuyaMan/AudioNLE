@@ -22,9 +22,11 @@ if ([string]::IsNullOrWhiteSpace($vcpkgCommit)) {
     throw 'vcpkg-configuration.json does not declare a default-registry baseline.'
 }
 
+$vcpkgWasCloned = $false
 if (-not (Test-Path -LiteralPath $vcpkgRoot)) {
     git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git $vcpkgRoot
     if ($LASTEXITCODE -ne 0) { throw 'Failed to clone repository-local vcpkg.' }
+    $vcpkgWasCloned = $true
 }
 
 if (-not (Test-Path -LiteralPath (Join-Path $vcpkgRoot '.git'))) {
@@ -38,7 +40,7 @@ $vcpkgBootstrapScript = Join-Path $vcpkgRoot 'bootstrap-vcpkg.bat'
 if ($currentVcpkgCommit -ne $vcpkgCommit -or -not (Test-Path -LiteralPath $vcpkgBootstrapScript)) {
     $vcpkgChanges = git -C $vcpkgRoot status --porcelain
     if ($LASTEXITCODE -ne 0) { throw 'Failed to inspect the repository-local vcpkg checkout.' }
-    if ($vcpkgChanges) {
+    if ($vcpkgChanges -and -not $vcpkgWasCloned) {
         throw "Repository-local vcpkg has uncommitted changes and is not pinned to $vcpkgCommit."
     }
 
