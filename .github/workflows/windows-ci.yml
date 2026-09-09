@@ -1,0 +1,35 @@
+name: Windows CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Windows x64 build and CTest
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
+      VCPKG_DISABLE_METRICS: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore vcpkg binary archive cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-windows-x64-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+
+      - name: Configure manifest dependencies and build
+        shell: pwsh
+        run: .\build.ps1 -SkipTests
+
+      - name: Run full CTest with failure output
+        shell: pwsh
+        run: ctest --test-dir build --output-on-failure --no-tests=error
