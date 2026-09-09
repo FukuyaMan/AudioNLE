@@ -1,0 +1,7 @@
+# Production SRC Alternative Backend Selection
+
+Selected runtime comparator: SpeexDSP resampler. SpeexDSP 1.2.1 (`e762196693c487249d7061081915c8eaf7511f4f`), from `https://github.com/xiph/speexdsp`, is BSD-3-Clause, with patches `none`. It was selected over r8brain because its public API uses per-instance state, caller-provided float input/output, fractional rational rate configuration, latency queries, and reset. libsoxr was not retried because its recorded CMake integration blocker remains unresolved.
+
+The comparator builds the pinned `libspeexdsp/resample.c` as a private static library with documented `OUTSIDE_SPEEX` symbol prefix and `FLOATING_POINT`, rather than importing SpeexDSP's autotools build. It configures/builds/links/runs with Windows/MSVC Release. Construction/reconfiguration/destruction are control-thread-only by adapter design; the public processing API consumes caller input and fills caller output. Source inspection records allocation in initialization/reconfiguration, so callback process allocation/lock freedom was not promoted without a separate Windows-IAT smoke.
+
+Integration complexity is **Moderate production SRC component**: it has a closer buffer model than r8brain, but still needs backend-specific latency/history planning, partial input consumption handling, reset reconstruction, and source-service binding. Its latency requirement is formally queryable through `speex_resampler_get_input_latency` and `speex_resampler_get_output_latency`; it does not change integer/rational AudioNLE authority.

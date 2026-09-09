@@ -1,0 +1,7 @@
+# Production SRC Deep Realtime Audit Status
+
+Callback-critical scope is active-view traversal, prepared native access, `BandlimitedSrcRuntime::process`, `src_process`, fixed staging and graph handoff; configuration, cache request, lifecycle and reconstruction are excluded control-thread work.
+
+Pinned source inspection traces `samplerate.c:src_process` through existing state vtable dispatch for `SRC_SINC_BEST_QUALITY`. State/private-buffer allocation/free occurs in `sinc_state_new`/`sinc_filter_new` and close paths. The inspected dispatch contains no allocation/realloc/free, mutex/critical section, condition/wait/sleep, file I/O, thread creation or logging call. This is static absence on the inspected dispatch, not exhaustive reachability proof of all converter loops/transitive CRT/Windows paths.
+
+Existing prepared fixture reports zero AudioNLE reader, wait, allocation, fallback, request, lifecycle and callback-miss counters. It observes no local allocation/lock/wait event and keeps first-use state creation outside callback, but does not intercept CRT `malloc/new/aligned` variants or `HeapAlloc`/`HeapFree`, and does not intercept all Windows synchronization/syscall paths. Production-duration protocol (10,000 measured blocks, three runs, 8/16/32 views and all block sizes) was not executed. Therefore realtime proof and production-duration tier threshold evidence remain incomplete.

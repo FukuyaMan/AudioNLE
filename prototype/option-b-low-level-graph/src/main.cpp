@@ -9,20 +9,24 @@
 #include <string>
 #include <vector>
 
+#include "source_runtime_engine.hpp"
+
 namespace option_b {
+using namespace audionle::source_runtime;
 using Sample = std::int64_t;
 constexpr int block = 128, maxDelay = 4096;
 constexpr float eps = 0.00001f;
 void require(bool v, const char* m) { if (!v) throw std::runtime_error(m); }
 void eq(float a, float b, const char* m) { require(std::abs(a-b) < eps, m); }
 
-struct Description { int id; enum Kind { source, add, multiply, delayKind, sum } kind; float value; int latency; bool enabled = true; };
+struct Description { int id; enum Kind { source, runtimeSource, add, multiply, delayKind, sum } kind; float value; int latency; bool enabled = true; SourceNode* runtime{}; ClipRuntimeView view{}; };
 struct Node {
   Description d; std::vector<Node*> in; std::array<float, block> out{}; std::array<float,maxDelay> delay{}; std::vector<std::array<float,maxDelay>> edgeDelay; int cursor=0; int path=0; std::vector<int> comp;
   explicit Node(Description x):d(x){}
   void process(Sample start, int n) {
     std::fill_n(out.begin(), n, 0.0f);
     if (d.kind == Description::source) { if (start <= 1024 && 1024 < start+n) out[1024-start]=d.value; return; }
+    if (d.kind == Description::runtimeSource) { (void)d.runtime->process(d.view,start,unsigned(n),out.data()); return; }
     for (size_t k=0;k<in.size();++k) for(int i=0;i<n;++i) {
       float v=in[k]->out[i]; int c=comp.empty()?0:comp[k];
       if(c) { int r=(cursor+i)%maxDelay; int read=(r-c+maxDelay)%maxDelay; float old=edgeDelay[k][read]; edgeDelay[k][r]=v; v=old; }
@@ -62,6 +66,9 @@ void run(){
   {Graph g;auto*a=g.add({1,Description::source,.25f,0});auto*b=g.add({2,Description::source,.25f,0});auto*c=g.add({3,Description::source,.25f,0});auto*la=g.add({4,Description::delayKind,0,256});auto*lb=g.add({5,Description::delayKind,0,1024});auto*lc=g.add({6,Description::delayKind,0,2048});auto*s=g.add({7,Description::sum,0,0});la->in={a};lb->in={b};lc->in={c};s->in={la,lb,lc};g.prepare(s);require(s->comp[0]==1792&&s->comp[1]==1024&&s->comp[2]==0,"B5 compensation");eq(at(g.render(0,3073),0,3072),.75f,"B5 PDC");}
   // B6 reconstruction
   auto make=[](){Graph g;auto*s=g.add({1,Description::source,.25f,0});auto*l=g.add({2,Description::delayKind,0,1024});l->in={s};g.prepare(l);return g;};auto a=make().render(0,2200);auto b=make().render(0,2200);require(a==b,"B6 reconstruction");
+  // The selected AudioNLE graph consumes three final SourceNode routes. A
+  // cold prepared source is zero only; native/realtime contributions continue.
+  auto root=std::filesystem::temp_directory_path()/"AudioNLE-source-runtime-graph";std::filesystem::create_directories(root);auto artifact=root/"prepared.anleprp";PreparedArtifactKey key{303,1,77,1,48000};writePreparedFixtureArtifact(artifact,key,20);auto nativeId=makeRuntimeIdentity(301,48000,Admission::NativeRate),realtimeId=makeRuntimeIdentity(302,44100,Admission::GuaranteedRealtime),preparedId=makeRuntimeIdentity(303,48000,Admission::PreparedRequired);SourceRuntime native(nativeId),realtime(realtimeId),prepared(preparedId,artifact);SourceNode nativeNode(native),realtimeNode(realtime),preparedNode(prepared);ClipRuntimeView nv{0,0,512,nativeId},rv{0,0,512,realtimeId},pv{0,0,512,preparedId};Graph mixed;auto*gn=mixed.add({10,Description::runtimeSource,0,0,true,&nativeNode,nv});auto*gr=mixed.add({11,Description::runtimeSource,0,0,true,&realtimeNode,rv});auto*gp=mixed.add({12,Description::runtimeSource,0,0,true,&preparedNode,pv});auto*sum=mixed.add({13,Description::sum,0,0});sum->in={gn,gr,gp};mixed.prepare(sum);auto cold=mixed.render(0,128);require(prepared.preparedMisses()>0&&std::any_of(cold.begin(),cold.end(),[](float x){return x!=0.0f;}),"graph cold preserves other routes");SharedSourceWorker worker;worker.add(native);worker.add(realtime);worker.add(prepared);worker.drain();auto ready=mixed.render(0,128);require(ready!=cold&&prepared.preparedCalls()>0,"graph prepared reload");std::error_code ec;std::filesystem::remove_all(root,ec);
   std::cout<<"OPTION-B B1-B6 PASS max-error=0 process-growth=0\n";
 }}
 int main(){try{option_b::run();return 0;}catch(const std::exception&e){std::cerr<<"OPTION-B FAIL "<<e.what()<<'\n';return 1;}}

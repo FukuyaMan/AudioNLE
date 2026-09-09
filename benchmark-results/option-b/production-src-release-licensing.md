@@ -1,0 +1,3 @@
+# Production SRC Release Licensing
+
+Authoritative source: pinned `build/_deps/libsamplerate-src/COPYING`, BSD-2-Clause, copyright Erik de Castro Lopo 2012--2016. Binary releases must reproduce copyright, conditions and disclaimer in documentation/materials. Static linking is permitted under the stated permissive conditions and does not itself require source release. Release record: upstream `https://github.com/libsndfile/libsamplerate`, 0.2.2, revision `b9c20b93660c3683fda12e3c2a01f0021bf96c56`, static CMake FetchContent, examples/install/tests off, patches none. Ship the notice/license text and retain this provenance.
