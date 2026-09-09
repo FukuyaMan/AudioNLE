@@ -14,8 +14,9 @@ Actions log.
 
 ## Components and implementation
 
-* `.github/workflows/windows-ci.yml`: `windows-2022`, checkout, a 120-minute
-  job timeout, vcpkg binary-cache restore, build, and full CTest steps.
+* `.github/workflows/windows-ci.yml`: `windows-2022`, default checkout (no
+  Tracktion submodule), a 120-minute job timeout, vcpkg binary-cache restore,
+  Option B build, and Option B full CTest steps.
 * `build.ps1`: discover installed Visual Studio through `vswhere`, initialize
   its x64 environment, align repository-local vcpkg to the manifest baseline,
   bootstrap that revision, then configure and build with Ninja and the vcpkg
@@ -37,8 +38,8 @@ directories and installed trees are not restored.
 Initial cache-miss runs can compile FFmpeg and take materially longer than
 ordinary builds. Network availability for pinned vcpkg and existing
 FetchContent dependencies remains required. Historical Tracktion prototype
-tests remain enabled; if they fail, the CTest step reports their actual names
-and output rather than masking them.
+implementation is not retained in current `main`; its Markdown evidence remains
+and its executable harnesses are recoverable from Git history.
 
 ## Validation strategy and completion criteria
 
@@ -50,12 +51,6 @@ during CMake configure, builds, and reports full CTest failure output.
 
 ## Local validation observation
 
-The standard `build.ps1 -SkipTests` configure/build succeeded locally with the
-manifest-installed `ffmpeg[avcodec,avformat,swresample]:x64-windows@9.0.1#1`.
-The full local CTest run completed with 49/51 passing. It recorded the existing
-historical Tracktion failure `tracktion_feasibility_phase_e_pdc`: `baseline
-expected sample 1024, observed 1026`. It also recorded
-`option_b_libsamplerate_timing_contract`: `OB-LSR FAIL prepared cache`.
-Neither test was disabled or changed. The dedicated CI CTest step will retain
-both test names and their emitted failure text in the Actions log if the hosted
-run reproduces them.
+The standard `build.ps1 -SkipTests` configuration has no Tracktion submodule
+checkout or `tracktion_*` tests. The standard CTest gate reports every accepted
+Option B test failure with its emitted output.

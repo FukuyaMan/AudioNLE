@@ -1,6 +1,14 @@
 AGENTS.md
 .agents/*
 /build/
+/.vcpkg-binary-cache/
 /.vscode/
+/.vs/
+/.idea/
 /third_party/vcpkg/
 /vcpkg_installed/
+*.VC.db
+*.VC.opendb
+*.sln.met
+*.suo
+*.user

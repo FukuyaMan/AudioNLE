@@ -1,5 +1,7 @@
 # Execution Plan: Tracktion Feasibility Prototype
 
+> Historical plan. ADR 0001 selected Option B and rejected Tracktion as the production backend. The executable prototype was removed from current `main`; this plan and its evidence are retained, and the implementation is recoverable from Git history.
+
 ## 1. Objective
 
 `docs/design/prototypes/tracktion-feasibility.md` の試験を、再現可能かつ段階的に実装・記録する。本計画の目的は Tracktion Engine の採用ではなく、AudioNLE の primary audio engine 候補として不適格なら早期に `Reject` できる証拠を得ることである。

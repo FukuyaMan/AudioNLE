@@ -64,13 +64,11 @@ caused by the FFmpeg decoder integration.
   runtime plan.
 * `option_b_libsamplerate_timing_contract` is a standalone synthetic
   libsamplerate fixture. CMake links it only to `samplerate`, not to
-  `audionle_engine_source_runtime` or FFmpeg. Its `prepared cache` failure is
-  reproducible from the fixture's expanded 320/147 invalidation case: an
-  eight-page modulo cache is primed over more than eight physical pages, so the
-  final page overwrites the first required page. The expanded ratio matrix was
-  introduced in `a76f93a`, before FFmpeg integration commit `3697bce`. This is
-  an independent fixture defect that must be repaired in the SRC feasibility
-  work; it is not MediaSource evidence and is not masked by this plan.
+  `audionle_engine_source_runtime` or FFmpeg. Its former `prepared cache`
+  failure was an expanded 320/147 invalidation-fixture defect: an eight-page
+  modulo cache was primed over nine required physical pages. The fixture now
+  retains nine fixed pages and its full requested range/assertions; this does
+  not alter MediaSource behavior or evidence.
 * `option_b_mixed_rate_src_identity_trace` is a standalone JUCE audio-basics
   trace target, with no link to `audionle_engine_source_runtime` or FFmpeg. Its
   current 160-frame case reports `expected=147`, `actual=146`, and two exact

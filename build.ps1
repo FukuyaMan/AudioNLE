@@ -10,6 +10,7 @@ $ErrorActionPreference = 'Stop'
 $vcpkgRoot = Join-Path $PSScriptRoot 'third_party\vcpkg'
 $vcpkgConfigurationPath = Join-Path $PSScriptRoot 'vcpkg-configuration.json'
 $buildDirectory = Join-Path $PSScriptRoot 'build'
+$vst3HelperDirectory = Join-Path $buildDirectory 'vst3_helpers'
 
 if (-not (Test-Path -LiteralPath $vcpkgConfigurationPath)) {
     throw "vcpkg configuration was not found: $vcpkgConfigurationPath"
@@ -89,6 +90,9 @@ foreach ($entry in $developerEnvironment) {
     }
 }
 
+if (Test-Path -LiteralPath $vst3HelperDirectory) {
+    Remove-Item -LiteralPath $vst3HelperDirectory -Recurse -Force
+}
 & cmake -S $PSScriptRoot -B $buildDirectory --fresh -G Ninja "-DCMAKE_BUILD_TYPE=$Configuration" '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' "-DCMAKE_TOOLCHAIN_FILE=$vcpkgRoot\scripts\buildsystems\vcpkg.cmake" '-DVCPKG_TARGET_TRIPLET=x64-windows'
 if ($LASTEXITCODE -ne 0) { throw 'CMake configure (including vcpkg manifest install) failed.' }
 

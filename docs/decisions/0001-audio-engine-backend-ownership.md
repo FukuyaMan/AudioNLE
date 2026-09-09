@@ -37,6 +37,20 @@ Domain -> integer source scheduling -> MediaSource runtime -> cache/prefetch
 
 Accordingly, A2 source evidence informs the source-core design but does not prove its B backend handoff. That handoff is a required post-decision validation gate.
 
+## Build and CI scope
+
+The standard build and CTest gate represent the accepted Candidate B
+architecture only. Current `main` has no Tracktion Engine dependency,
+submodule, target, or feasibility test. Candidate B obtains its direct JUCE
+hosting dependency independently.
+
+The historical Tracktion executable prototypes were removed from current
+`main` after this accepted decision. Their Markdown comparison, results, and
+benchmark evidence remain in the repository; the removed implementation and
+its exact historical test harnesses are recoverable from Git history. This
+preserves the decision record without retaining rejected backend code as a
+current dependency or CI concern.
+
 ## Decision drivers
 
 1. Integer authority and deterministic reconstruction remain framework-free in both candidates; B demonstrates them through bounded graph/VST3/Tail reconstruction fixtures.

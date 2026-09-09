@@ -26,7 +26,7 @@ PASS. The wrapper phase-lattice and exact discard model passes every reduced pha
 
 ## LS9--LS12 outcome
 
-PASS; proceed to edit/lifecycle gates. Both ratios reconstruct the same exposed Timeline range under 128, 256, and deterministic irregular graph/native partitions (max and RMS error <= `2e-5`) without graph-boundary reset or state replacement. Generation-stamped cache pages reject an old page; its SRC state is discarded and a fresh state renders current-generation output. The fixed cache is 8224 bytes, with zero AudioNLE callback reader/wait/allocation/fallback operations and no duration-scaled retained PCM.
+PASS; proceed to edit/lifecycle gates. Both ratios reconstruct the same exposed Timeline range under 128, 256, and deterministic irregular graph/native partitions (max and RMS error <= `2e-5`) without graph-boundary reset or state replacement. Generation-stamped cache pages reject an old page; its SRC state is discarded and a fresh state renders current-generation output. The expanded 320/147 invalidation row requires nine 257-frame pages; the fixture cache is therefore fixed at 9252 bytes, with zero AudioNLE callback reader/wait/allocation/fallback operations and no duration-scaled retained PCM.
 
 Carried constraint: **AudioNLE callback contract proven; libsamplerate internal realtime safety partially unproven.** Source inspection observes allocation in state creation/destruction, not the examined `src_process` dispatch, but this fixture does not interpose all CRT/OS allocation or lock primitives. LS13--LS19 may begin; LS20--LS22 remain mandatory before candidate classification.
 

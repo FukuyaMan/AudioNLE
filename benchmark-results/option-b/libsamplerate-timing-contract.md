@@ -23,7 +23,7 @@ LS5--LS8 establishes edit-boundary and preroll evidence only; quality remains ou
 | Joint graph/native matrix | 128, irregular x large, irregular: PASS | same |
 | Generation invalidation | stale observed 1, discarded 1; fresh state PASS | same |
 
-The fixture records `input_frames_used` and `output_frames_gen` per `src_process` call. Intermediate production may differ by partition; after unchanged wrapper discard, final visible output is equivalent. Callback counters remain reader/file/decode `0`, wait/block/spin `0`, allocation/growth `0`, fallback `0`, and prepared-cache misses `0`. Cache is fixed at `8 x 257` float frames (8224 bytes), and duration-scaled retained PCM is `0`.
+The fixture records `input_frames_used` and `output_frames_gen` per `src_process` call. Intermediate production may differ by partition; after unchanged wrapper discard, final visible output is equivalent. Callback counters remain reader/file/decode `0`, wait/block/spin `0`, allocation/growth `0`, fallback `0`, and prepared-cache misses `0`. Cache is fixed at `9 x 257` float frames (9252 bytes), which covers the nine pages required by the 320/147 invalidation range without modulo overwrite; duration-scaled retained PCM is `0`.
 
 Classification: **LS9-LS12 PASS; proceed to edit/lifecycle gates**. Carried constraint: **AudioNLE callback contract proven; libsamplerate internal realtime safety partially unproven.**
 
@@ -40,7 +40,7 @@ Classification: **LS9-LS12 PASS; proceed to edit/lifecycle gates**. Carried cons
 | Multi-view / recreation | PASS; independent SRC states, deterministic sum, unaffected surviving view |
 | Logical / physical end | PASS; logical exposure cap exact; final input uses `end_of_input=true` |
 
-SRC settling is not AudioNLE Effect Tail. It is solely physical computation needed at source boundaries and creates no user-visible effect-tail semantics. Callback counters remain zero for all exercised edit cases; 8224-byte cache remains fixed and duration-scaled PCM remains zero. The empirical `1024 + phase rounding` preroll was sufficient without increase. Classification: **LS13-LS19 PASS; proceed to quality/final comparison**. LS20 may begin.
+SRC settling is not AudioNLE Effect Tail. It is solely physical computation needed at source boundaries and creates no user-visible effect-tail semantics. Callback counters remain zero for all exercised edit cases; the fixed 9252-byte cache remains bounded and duration-scaled PCM remains zero. The empirical `1024 + phase rounding` preroll was sufficient without increase. Classification: **LS13-LS19 PASS; proceed to quality/final comparison**. LS20 may begin.
 
 ## LS20--LS22 classification
 

@@ -1,5 +1,7 @@
 # Execution Plan: Tracktion Selective Reuse Prototype (Option A2)
 
+> Historical plan. ADR 0001 selected Option B and rejected Tracktion as the production backend. The executable prototype was removed from current `main`; this plan and its evidence are retained, and the implementation is recoverable from Git history.
+
 ## 1. Objective
 
 Determine whether AudioNLE can retain authoritative integer-sample source scheduling while selectively reusing public low-level Tracktion graph, processing, plugin, renderer, and thread infrastructure. This is a feasibility decision between `Proceed`, `Proceed with Constraints`, `Reject`, and `Inconclusive`; it does not adopt Tracktion or define production architecture.

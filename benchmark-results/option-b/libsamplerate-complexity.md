@@ -8,7 +8,12 @@ The bounded wrapper needs per-view prepared SRC state, up to `1024 + Q - 1` phys
 
 ## LS9--LS12 accounting and audit
 
-Per active view, AudioNLE cache is 8224 bytes (eight fixed 257-frame float pages); caller/scratch buffers are prepared before callback processing; libsamplerate owns one opaque prepared SINC state. Two views were exercised sequentially. Retained PCM does not scale with source duration (`0`).
+The timing-contract fixture's active-view cache is 9252 bytes (nine fixed
+257-frame float pages); this is the minimum capacity that retains every page
+in the 320/147 invalidation range without modulo overwrite. Caller/scratch
+buffers are prepared before callback processing; libsamplerate owns one opaque
+prepared SINC state. Two views were exercised sequentially. Retained PCM does
+not scale with source duration (`0`).
 
 The pinned source allocates SINC state/private buffer in `sinc_state_new`/`sinc_filter_new`, resets it through lifecycle APIs, and frees it on close. `src_process` in `samplerate.c` validates and dispatches to the existing state vtable. No allocation/free/realloc, mutex/critical section, wait, sleep, or blocking OS operation was observed in that dispatch/source path. Full Windows CRT/OS interception was not performed; therefore backend internal allocation/lock freedom is partially unproven. The wrapper remains a bounded source/SRC extension, not a Timeline-authority change.
 
