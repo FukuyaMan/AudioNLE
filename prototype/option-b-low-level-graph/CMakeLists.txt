@@ -22,7 +22,10 @@ add_test(NAME option_b_ffmpeg_link_probe COMMAND option_b_ffmpeg_link_probe)
 
 add_executable(option_b_ffmpeg_native_source src/ffmpeg_native_source_provider_test.cpp)
 target_compile_features(option_b_ffmpeg_native_source PRIVATE cxx_std_20)
-target_link_libraries(option_b_ffmpeg_native_source PRIVATE audionle_engine_source_runtime)
+# Test-only fixture mux/encode uses the same pinned vcpkg FFmpeg libraries as
+# the provider.  No machine-global ffmpeg CLI is part of this target.
+target_include_directories(option_b_ffmpeg_native_source PRIVATE ${FFMPEG_INCLUDE_DIRS})
+target_link_libraries(option_b_ffmpeg_native_source PRIVATE audionle_engine_source_runtime ${FFMPEG_LIBRARIES})
 if(MSVC)
   target_compile_options(option_b_ffmpeg_native_source PRIVATE /utf-8)
 endif()

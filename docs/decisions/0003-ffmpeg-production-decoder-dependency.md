@@ -61,3 +61,26 @@ Consumers use `find_package(FFMPEG REQUIRED)` and `${FFMPEG_LIBRARIES}`.
 No FFmpeg symbols enter Domain or SourceRuntime contracts. The engine-private
 decoder exposes only media/stream identity, integer native coordinates,
 channel metadata, and float PCM through `NativeSourceProvider`.
+
+## Implementation validation
+
+The decision is implemented and validated by the linked production source
+runtime. `FfmpegNativeSourceProvider` uses FFmpeg seek plus a bounded
+8192-native-frame preroll, then discards decoded samples until the requested
+integer native coordinate. PTS/timebase selects a seek entry point only; it is
+not exposed as the source-coordinate contract.
+
+The test-only fixture helper uses those same linked FFmpeg libraries to encode
+and mux controlled MP4, MKV, and MOV inputs; it has no `ffmpeg.exe` subprocess
+or PATH dependency. Fixtures cover WAV, mono/stereo, two selected audio streams,
+nonzero stream start, 44.1/48 kHz, forward/backward/repeat/EOF-near seeks,
+selected-stream generation replacement, and a 30-second large-offset container
+sequence. The provider's PCM conversion scratch is fixed at at most
+8192 interleaved frames and retains no whole-file PCM. Native pages remain
+bounded at two 2048-frame pages.
+
+The focused graph and Windows IAT tests execute the linked native, realtime
+SRC, and prepared routes. Callback intervals perform no provider read, FFmpeg
+work, file I/O, allocation, lock/wait, or lifecycle mutation. This ADR remains
+**Accepted**; CI is configured for hosted full-suite execution, with first-run
+evidence pending push.
